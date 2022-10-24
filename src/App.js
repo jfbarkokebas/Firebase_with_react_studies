@@ -2,8 +2,15 @@ import './App.css';
 
 //firebase
 import { db, auth } from './firebaseConection'
-import { doc, setDoc, collection, addDoc, getDoc, getDocs, updateDoc, deletePost, deleteDoc, onSnapshot } from 'firebase/firestore'
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { 
+  doc, setDoc, collection,
+  addDoc, getDoc, getDocs, 
+  updateDoc, deletePost, deleteDoc, 
+  onSnapshot } from 'firebase/firestore'
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, onAuthStateChanged } from 'firebase/auth';
 //states
 import { useState, useEffect } from 'react'
 import { async } from '@firebase/util';
@@ -19,6 +26,7 @@ function App() {
   const [password, setPassword] = useState('')
   const [isSignIn, setIsSigIn] = useState(false)
   const [userSistem, setUserSistem] = useState({})
+  const [error, setError] = useState('')
 
   /*async function handleAdd() {
     await setDoc(doc(db, 'posts', '12345'), {
@@ -62,6 +70,27 @@ function App() {
     loadPosts()
   }, [])
 
+  //mantendo o login salvo:
+  useEffect(() => {
+    async function checkLogin(){
+      onAuthStateChanged(auth, (user)=>{
+        if(user){
+          console.log(user)
+          setIsSigIn(true)
+          setUserSistem({
+            uid: user.uid,
+            email: user.email
+          })
+        }else{
+          setIsSigIn(false)
+          setUserSistem('')
+
+        }
+      })
+    }
+    checkLogin()
+  }, [])
+  
 
   async function handleGetPost() {
 
@@ -172,9 +201,19 @@ function App() {
           email: value.user.email
         })
         setIsSigIn(true)
+        setEmail('')
+        setPassword('')
 
       })
-      .catch(console.log('Erro ao logar, tente novamente'))
+      .catch(()=>{
+        setError('Erro no login, verifique a senha e email')
+      })
+  }
+
+  async function logoutUser(){
+    await signOut(auth)
+    setIsSigIn(false)
+    setUserSistem('')
   }
 
   return (
@@ -182,7 +221,9 @@ function App() {
       <h1>React + Firebase</h1>
       <div className="container">
 
-        <label>
+        {!isSignIn &&(
+          <>
+          <label>
           E-mail:
           <input type='email' value={email} onChange={e => setEmail(e.target.value)} ></input><br />
         </label><br />
@@ -192,13 +233,19 @@ function App() {
         </label><br />
         <button onClick={addUser}>Cadastrar</button>
         <button onClick={login}>Fazer Login</button><br />
+        {error!=='' && (
+          <p>{error}</p>
+        )}
 
         <hr />
         <hr /><br />
+          </>
+        )}
 
         {isSignIn &&(
-          <>git
-          <h3>Seja bem vindo {userSistem.email}</h3>
+          <>
+          <strong>Seja bem vindo {userSistem.email}</strong><br />
+          <button onClick={logoutUser}>Sair da Conta</button><br /><br />
 
           <label>
           ID do Post:
